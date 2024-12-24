@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\BlogController;
+use App\Http\Controllers\API\FeedbackController;
 use App\Http\Controllers\API\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -20,11 +21,13 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/blogs', [BlogController::class, 'index']);
 
 // Route yang bisa diakses oleh semua pengguna yang terautentikasi
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/blogs', [BlogController::class, 'index']);
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/feedbacks', [FeedbackController::class, 'store']);
+    Route::get('/feedbacks', [FeedbackController::class, 'index']);
 });
 
 // Route untuk Admin (hanya dapat diakses oleh pengguna dengan role admin)
@@ -44,6 +47,9 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::post('/blogs', [BlogController::class, 'store']);
     Route::patch('/blogs/{id}', [BlogController::class, 'update']);
     Route::delete('/blogs/{id}', [BlogController::class, 'destroy']);
+
+    // Feedback management
+    Route::delete('/feedbacks/{id}', [FeedbackController::class, 'destroy']);
 });
 
 
