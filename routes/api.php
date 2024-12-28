@@ -28,7 +28,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/feedbacks', [FeedbackController::class, 'store']);
     Route::get('/feedbacks', [FeedbackController::class, 'index']);
-    Route::get('/feedbacks', [FeedbackController::class, 'index2']);
+    Route::get('/feedbacks/list', [FeedbackController::class, 'index2']);
 });
 
 // Route untuk Admin (hanya dapat diakses oleh pengguna dengan role admin)
