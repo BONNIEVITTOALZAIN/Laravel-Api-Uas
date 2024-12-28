@@ -27,6 +27,15 @@ class FeedbackController extends Controller
         return response()->json($feedbacks, 200);
     }
 
+    public function index2()
+    {
+        $feedbacks = Feedback::all();
+        return response()->json([
+            'success' => true,
+            'data' => $feedbacks,
+        ]);
+    }
+
     public function destroy($id)
     {
         $feedback = Feedback::findOrFail($id);
