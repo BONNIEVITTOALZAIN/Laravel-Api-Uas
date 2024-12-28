@@ -78,23 +78,33 @@ class UserController extends Controller
 
     public function destroy($id)
     {
-        $user = User::find($id);
+    $currentUser = auth()->user();
 
-        if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Pengguna tidak ditemukan.'
-            ], Response::HTTP_NOT_FOUND);
-        }
 
-        // Delete user
-        $user->delete();
-
+    if ($currentUser->id == $id) {
         return response()->json([
-            'success' => true,
-            'message' => 'Pengguna berhasil dihapus.'
-        ], Response::HTTP_OK);
+            'success' => false,
+            'message' => 'Anda tidak dapat menghapus akun Anda sendiri.'
+        ], Response::HTTP_FORBIDDEN);
     }
+
+    $user = User::find($id);
+
+    if (!$user) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Pengguna tidak ditemukan.'
+        ], Response::HTTP_NOT_FOUND);
+    }
+
+    $user->delete();
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Pengguna berhasil dihapus.'
+    ], Response::HTTP_OK);
+}
+
 
     public function updateProfile(Request $request)
     {
@@ -102,7 +112,7 @@ class UserController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . auth()->id(),
-            'password' => 'nullable|min:8', // Optional: Only validate if password is provided
+            'password' => 'nullable|min:8'
         ]);
 
         if ($validator->fails()) {
