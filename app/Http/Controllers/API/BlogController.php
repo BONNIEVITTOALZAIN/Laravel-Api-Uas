@@ -5,20 +5,11 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Blog;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class BlogController extends Controller
 {
     public function index()
-    {
-        $blogs = Blog::all();
-        return response()->json([
-            'success' => true,
-            'data' => $blogs,
-        ]);
-    }
-
-    public function index2()
     {
         $blogs = Blog::all();
         return response()->json([
@@ -55,7 +46,11 @@ class BlogController extends Controller
         $imagePath = null;
 
         if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('blog_images', 'public');
+            $uploadedFile = Cloudinary::upload($request->file('image')->getRealPath(), [
+                'folder' => 'upload/blogs',
+            ]);
+
+            $imagePath = $uploadedFile->getSecurePath();
         }
 
         $blog = Blog::create([
@@ -89,17 +84,25 @@ class BlogController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
-            if ($blog->image && Storage::exists('public/' . $blog->image)) {
-                Storage::delete('public/' . $blog->image);
+            // Hapus gambar lama dari Cloudinary jika ada
+            if ($blog->image) {
+                $publicId = pathinfo($blog->image, PATHINFO_FILENAME);
+                Cloudinary::destroy("upload/blogs/{$publicId}");
             }
 
-            $blog->image = $request->file('image')->store('blog_images', 'public');
+            // Unggah gambar baru ke Cloudinary
+            $uploadedFile = Cloudinary::upload($request->file('image')->getRealPath(), [
+                'folder' => 'upload/blogs',
+            ]);
+
+            $blog->image = $uploadedFile->getSecurePath();
         }
 
+        // Update data lainnya
         $blog->update([
             'title' => $validated['title'],
             'description' => $validated['description'],
-            'image' => $blog->image,
+            'image' => $blog->image, // Update gambar jika diunggah ulang
         ]);
 
         return response()->json([
@@ -120,8 +123,10 @@ class BlogController extends Controller
             ], 404);
         }
 
-        if ($blog->image && Storage::exists('public/' . $blog->image)) {
-            Storage::delete('public/' . $blog->image);
+        // Hapus gambar dari Cloudinary jika ada
+        if ($blog->image) {
+            $publicId = pathinfo($blog->image, PATHINFO_FILENAME);
+            Cloudinary::destroy("upload/blogs/{$publicId}");
         }
 
         $blog->delete();
