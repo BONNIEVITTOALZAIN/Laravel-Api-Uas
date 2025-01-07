@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Blog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class BlogController extends Controller
 {
@@ -55,7 +56,11 @@ class BlogController extends Controller
         $imagePath = null;
 
         if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('blog_images', 'public');
+            $uploadedFile = Cloudinary::upload($request->file('image')->getRealPath(), [
+                'folder' => 'upload/blogs',
+            ]);
+
+            $imagePath = $uploadedFile->getSecurePath();
         }
 
         $blog = Blog::create([
@@ -88,12 +93,25 @@ class BlogController extends Controller
             'image' => 'nullable|image|mimes:jpg,png,jpeg,gif|max:2048',
         ]);
 
-        if ($request->hasFile('image')) {
-            if ($blog->image && Storage::exists('public/' . $blog->image)) {
-                Storage::delete('public/' . $blog->image);
-            }
+        // Hapus
+        if ($blog->image) {
+            // if ($blog->image && Storage::exists('public/' . $blog->image)) {
+            //     Storage::delete('public/' . $blog->image);
+            // }
 
-            $blog->image = $request->file('image')->store('blog_images', 'public');
+            $file_url = $blog->image;
+            $publicId = substr($file_url, strrpos($file_url, 'upload/blogs/'), strrpos($file_url, '.') - strrpos($file_url, 'upload/blogs/'));
+            // $blog->image = $request->file('image')->store('blog_images', 'public');
+
+            Cloudinary::destroy($publicId);
+        }
+
+        if ($request->hasFile('image')) {
+            $uploadedFile = Cloudinary::upload($request->file('image')->getRealPath(), [
+                'folder' => 'upload/blogs',
+            ]);
+
+            $imagePath = $uploadedFile->getSecurePath();
         }
 
         $blog->update([
@@ -118,10 +136,14 @@ class BlogController extends Controller
                 'success' => false,
                 'message' => 'Blog not found.',
             ], 404);
+        } else {
+            $file_url = $blog->image;
         }
 
-        if ($blog->image && Storage::exists('public/' . $blog->image)) {
-            Storage::delete('public/' . $blog->image);
+        if ($blog->image) {
+            $publicId = substr($file_url, strrpos($file_url, 'upload/blogs/'), strrpos($file_url, '.') - strrpos($file_url, 'upload/blogs/'));
+
+            Cloudinary::destroy($publicId);
         }
 
         $blog->delete();
